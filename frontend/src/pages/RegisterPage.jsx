@@ -39,8 +39,8 @@ function RegisterPage({ setUser }) {
   };
 
   return (
-    <div className="page-container">
-      <div className="auth-card animate-fade-in" style={{ maxWidth: "450px", width: "100%" }}>
+    <div className="auth-container">
+      <div className="auth-card animate-fade-in">
         <div className="auth-header">
           <h1 className="auth-title">🏨 Join AIT Grand Palace</h1>
           <p className="auth-subtitle">Create your luxury dining account</p>
@@ -49,7 +49,7 @@ function RegisterPage({ setUser }) {
         <div className="auth-body">
           {error && (
             <div className="form-error" style={{ 
-              background: "var(--danger-color)", 
+              background: "#dc2626", 
               color: "white", 
               padding: "var(--spacing-3)", 
               borderRadius: "var(--radius-md)",
@@ -133,10 +133,10 @@ function RegisterPage({ setUser }) {
         </div>
         
         <div className="auth-footer">
-          <p style={{ margin: 0, color: "var(--text-secondary)" }}>
+          <p style={{ margin: 0, color: "#64748b" }}>
             Already have an account?{" "}
             <Link to="/login" style={{ 
-              color: "var(--hotel-gold)", 
+              color: "#fbbf24", 
               fontWeight: "600",
               textDecoration: "none"
             }}>

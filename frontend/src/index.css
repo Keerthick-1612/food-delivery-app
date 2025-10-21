@@ -109,7 +109,13 @@ body {
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--text-primary);
-  background: linear-gradient(135deg, var(--hotel-cream) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 50%, rgba(241, 245, 249, 0.95) 100%),
+    url('');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   min-height: 100vh;
 }
 
@@ -208,6 +214,13 @@ body {
   justify-content: center;
   padding: var(--spacing-8) var(--spacing-4);
   min-height: calc(100vh - 80px);
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 50%, rgba(241, 245, 249, 0.9) 100%),
+    url('');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 .content-wrapper {

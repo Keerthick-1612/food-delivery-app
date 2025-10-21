@@ -10,6 +10,7 @@ import CustomerOrderHistory from "./pages/CustomerOrderHistory";
 import Profile from "./components/Profile";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import BackButton from "./components/BackButton";
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -17,10 +18,16 @@ function App() {
     return stored ? JSON.parse(stored) : null;
   });
 
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
+
   return (
     <Router>
       <div className="app-container">
         <Header user={user} />
+        <BackButton onLogout={handleLogout} />
         <main className="main-content">
           <div className="content-wrapper">
             <Routes>

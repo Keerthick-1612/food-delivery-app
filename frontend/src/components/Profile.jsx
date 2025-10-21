@@ -12,9 +12,9 @@ function Profile({ user }) {
 
   const getRoleColor = (role) => {
     switch (role) {
-      case "admin": return "var(--hotel-burgundy)";
-      case "customer": return "var(--hotel-gold)";
-      default: return "var(--gray-500)";
+      case "admin": return "#7f1d1d";
+      case "customer": return "#fbbf24";
+      default: return "#6b7280";
     }
   };
 
@@ -25,21 +25,21 @@ function Profile({ user }) {
         <p className="page-subtitle">Welcome to Grand Palace Hotel's luxury dining experience</p>
       </div>
 
-      <div className="card animate-fade-in" style={{ maxWidth: "800px", width: "100%" }}>
+      <div className="card animate-fade-in" style={{ maxWidth: "800px", width: "100%", background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(10px)" }}>
         <div className="card-header">
           <div className="flex items-center gap-4">
             <div style={{
               width: "100px",
               height: "100px",
               borderRadius: "50%",
-              background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, var(--hotel-gold) 100%)`,
+              background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, #fbbf24 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: "var(--font-size-4xl)",
               color: "white",
-              boxShadow: "var(--shadow-xl)",
-              border: "4px solid var(--hotel-cream)"
+              boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+              border: "4px solid #fef7ed"
             }}>
               {getRoleIcon(user.role)}
             </div>
@@ -69,9 +69,9 @@ function Profile({ user }) {
             <div>
               <h3 style={{ 
                 margin: "0 0 var(--spacing-4) 0", 
-                color: "var(--hotel-burgundy)",
+                color: "#7f1d1d",
                 fontSize: "var(--font-size-xl)",
-                borderBottom: "2px solid var(--hotel-gold)",
+                borderBottom: "2px solid #fbbf24",
                 paddingBottom: "var(--spacing-2)"
               }}>
                 📧 Account Information
@@ -82,7 +82,7 @@ function Profile({ user }) {
                     display: "block", 
                     fontSize: "var(--font-size-sm)", 
                     fontWeight: "600", 
-                    color: "var(--hotel-burgundy)",
+                    color: "#7f1d1d",
                     marginBottom: "var(--spacing-1)"
                   }}>
                     Full Name
@@ -102,7 +102,7 @@ function Profile({ user }) {
                     display: "block", 
                     fontSize: "var(--font-size-sm)", 
                     fontWeight: "600", 
-                    color: "var(--hotel-burgundy)",
+                    color: "#7f1d1d",
                     marginBottom: "var(--spacing-1)"
                   }}>
                     Email Address
@@ -122,7 +122,7 @@ function Profile({ user }) {
                     display: "block", 
                     fontSize: "var(--font-size-sm)", 
                     fontWeight: "600", 
-                    color: "var(--hotel-burgundy)",
+                    color: "#7f1d1d",
                     marginBottom: "var(--spacing-1)"
                   }}>
                     Account Type
@@ -142,9 +142,9 @@ function Profile({ user }) {
             <div>
               <h3 style={{ 
                 margin: "0 0 var(--spacing-4) 0", 
-                color: "var(--hotel-burgundy)",
+                color: "#7f1d1d",
                 fontSize: "var(--font-size-xl)",
-                borderBottom: "2px solid var(--hotel-gold)",
+                borderBottom: "2px solid #fbbf24",
                 paddingBottom: "var(--spacing-2)"
               }}>
                 🚀 Quick Actions
@@ -158,7 +158,7 @@ function Profile({ user }) {
                       textDecoration: "none",
                       justifyContent: "flex-start",
                       padding: "var(--spacing-4)",
-                      background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)"
+                      background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)"
                     }}
                   >
                     🍽️ Browse Our Menu
@@ -174,7 +174,7 @@ function Profile({ user }) {
                         textDecoration: "none",
                         justifyContent: "flex-start",
                         padding: "var(--spacing-4)",
-                        background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)"
+                        background: "linear-gradient(135deg, #7f1d1d 0%, #1e40af 100%)"
                       }}
                     >
                       ⚙️ Hotel Management
@@ -186,7 +186,7 @@ function Profile({ user }) {
                         textDecoration: "none",
                         justifyContent: "flex-start",
                         padding: "var(--spacing-4)",
-                        background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)"
+                        background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)"
                       }}
                     >
                       📋 Order Management

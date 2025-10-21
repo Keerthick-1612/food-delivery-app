@@ -119,7 +119,7 @@ function OrderDashboard({ user }) {
             <div className="stat-label">Preparing Orders</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">${stats.totalRevenue.toFixed(0)}</div>
+            <div className="stat-value">₹{stats.totalRevenue.toFixed(0)}</div>
             <div className="stat-label">Total Revenue</div>
           </div>
         </div>
@@ -229,7 +229,7 @@ function OrderDashboard({ user }) {
                           <div>
                             <div className="order-item-name">{item.name}</div>
                             <div className="order-item-details">
-                              ${item.price} × {item.quantity} = ${(item.price * item.quantity).toFixed(2)}
+                              ₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -240,7 +240,7 @@ function OrderDashboard({ user }) {
                 
                 <div className="order-footer">
                   <div className="order-total">
-                    Total: ${order.totalAmount.toFixed(2)}
+                    Total: ₹{order.totalAmount.toFixed(2)}
                   </div>
                   {order.status === "confirmed" && (
                     <button

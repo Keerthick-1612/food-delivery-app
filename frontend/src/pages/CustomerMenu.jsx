@@ -144,21 +144,22 @@ function CustomerMenu({ user }) {
 
         {/* Enhanced Cart Summary */}
         <div className="cart-summary" style={{ 
-          background: "linear-gradient(135deg, var(--bg-card) 0%, var(--hotel-cream) 100%)",
-          border: "2px solid var(--hotel-gold)",
-          boxShadow: "var(--shadow-xl)"
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
+          border: "2px solid #fbbf24",
+          boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+          backdropFilter: "blur(10px)"
         }}>
           <div className="cart-header">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="cart-title" style={{ color: "var(--hotel-burgundy)" }}>🛒 Your Order</h2>
+                <h2 className="cart-title" style={{ color: "#7f1d1d" }}>🛒 Your Order</h2>
                 <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)", marginTop: "var(--spacing-1)" }}>
                   Ready to place your order?
                 </div>
               </div>
               <div className="text-right">
                 <div className="cart-total" style={{ fontSize: "var(--font-size-2xl)", fontWeight: "700" }}>
-                  ${cart.totalAmount.toFixed(2)}
+                  ₹{cart.totalAmount.toFixed(2)}
                 </div>
                 <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
                   {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'}
@@ -173,8 +174,8 @@ function CustomerMenu({ user }) {
                 onClick={() => setShowCart(!showCart)}
                 className="btn btn-outline"
                 style={{ 
-                  borderColor: "var(--hotel-burgundy)", 
-                  color: "var(--hotel-burgundy)",
+                  borderColor: "#7f1d1d", 
+                  color: "#7f1d1d",
                   fontWeight: "600"
                 }}
               >
@@ -190,7 +191,7 @@ function CustomerMenu({ user }) {
                   textAlign: "right"
                 }}>
                   <div>Ready to order?</div>
-                  <div style={{ fontWeight: "600", color: "var(--hotel-burgundy)" }}>
+                  <div style={{ fontWeight: "600", color: "#7f1d1d" }}>
                     Click to place order
                   </div>
                 </div>
@@ -198,11 +199,11 @@ function CustomerMenu({ user }) {
                   onClick={handleConfirmOrder}
                   className="btn btn-success btn-lg"
                   style={{ 
-                    background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)",
+                    background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
                     fontSize: "var(--font-size-lg)",
                     fontWeight: "700",
                     padding: "var(--spacing-4) var(--spacing-8)",
-                    boxShadow: "var(--shadow-lg)"
+                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
                   }}
                 >
                   🚀 Place Order
@@ -250,7 +251,7 @@ function CustomerMenu({ user }) {
                       </td>
                       <td className="text-right">
                         <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
-                          ${item.price}
+                          ₹{item.price}
                         </span>
                       </td>
                       <td className="text-center">
@@ -316,7 +317,7 @@ function CustomerMenu({ user }) {
                       </td>
                       <td className="text-right">
                         <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
-                          ${item.price}
+                          ₹{item.price}
                         </span>
                       </td>
                       <td className="text-center">
@@ -389,9 +390,10 @@ function CustomerMenu({ user }) {
         {showCart && cart.items.length > 0 && (
           <div className="cart-summary" style={{ 
             marginTop: "var(--spacing-8)",
-            background: "linear-gradient(135deg, var(--bg-card) 0%, var(--hotel-cream) 100%)",
-            border: "2px solid var(--hotel-gold)",
-            boxShadow: "var(--shadow-xl)"
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
+            border: "2px solid #fbbf24",
+            boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+            backdropFilter: "blur(10px)"
           }}>
             <div className="cart-header">
               <div className="flex justify-between items-center">
@@ -403,7 +405,7 @@ function CustomerMenu({ user }) {
                 }}>
                   <div>Review your order before placing</div>
                   <div style={{ fontWeight: "600", color: "var(--hotel-burgundy)" }}>
-                    Total: ${cart.totalAmount.toFixed(2)}
+                    Total: ₹{cart.totalAmount.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -436,7 +438,7 @@ function CustomerMenu({ user }) {
                         </td>
                         <td className="text-right">
                           <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
-                            ${item.price}
+                            ₹{item.price}
                           </span>
                         </td>
                         <td className="text-center">
@@ -452,7 +454,7 @@ function CustomerMenu({ user }) {
                         </td>
                         <td className="text-right">
                           <span style={{ fontWeight: "700", color: "var(--hotel-burgundy)", fontSize: "var(--font-size-lg)" }}>
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ₹{(item.price * item.quantity).toFixed(2)}
                           </span>
                         </td>
                         <td className="text-center">
@@ -500,11 +502,11 @@ function CustomerMenu({ user }) {
                   onClick={handleConfirmOrder}
                   className="btn btn-success btn-lg"
                   style={{ 
-                    background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)",
+                    background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
                     fontSize: "var(--font-size-lg)",
                     fontWeight: "700",
                     padding: "var(--spacing-4) var(--spacing-8)",
-                    boxShadow: "var(--shadow-lg)"
+                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
                   }}
                 >
                   🚀 Place Order

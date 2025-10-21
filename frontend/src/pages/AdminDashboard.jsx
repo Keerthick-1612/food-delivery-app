@@ -168,19 +168,19 @@ function AdminDashboard({ user }) {
             <div className="stat-label">Low Stock Items</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">${stats.totalValue.toFixed(0)}</div>
+            <div className="stat-value">₹{stats.totalValue.toFixed(0)}</div>
             <div className="stat-label">Inventory Value</div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center mb-8">
-          <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Menu Management</h2>
+          <h2 style={{ margin: 0, color: "#7f1d1d", fontSize: "var(--font-size-2xl)" }}>Menu Management</h2>
           <div className="flex gap-4">
             <a 
               href="/admin/orders" 
               className="btn btn-secondary"
-              style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
+              style={{ background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)" }}
             >
               📋 Order Management
             </a>
@@ -196,12 +196,12 @@ function AdminDashboard({ user }) {
         {/* Add Item Form */}
         <div className="card mb-8">
           <div className="card-header">
-            <h3 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-xl)" }}>➕ Add New Menu Item</h3>
+            <h3 style={{ margin: 0, color: "#7f1d1d", fontSize: "var(--font-size-xl)" }}>➕ Add New Menu Item</h3>
           </div>
           <div className="card-body">
             {error && (
               <div className="form-error" style={{ 
-                background: "var(--danger-color)", 
+                background: "#dc2626", 
                 color: "white", 
                 padding: "var(--spacing-3)", 
                 borderRadius: "var(--radius-md)",
@@ -280,7 +280,7 @@ function AdminDashboard({ user }) {
                 type="submit" 
                 className="btn btn-primary btn-lg"
                 disabled={loading}
-                style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
+                style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #1e40af 100%)" }}
               >
                 {loading ? (
                   <>
@@ -298,7 +298,7 @@ function AdminDashboard({ user }) {
         {/* Items Table */}
         <div className="card">
           <div className="card-header">
-            <h3 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-xl)" }}>📋 Current Menu Items</h3>
+            <h3 style={{ margin: 0, color: "#7f1d1d", fontSize: "var(--font-size-xl)" }}>📋 Current Menu Items</h3>
           </div>
           <div className="card-body">
             {items.length === 0 ? (
@@ -340,7 +340,7 @@ function AdminDashboard({ user }) {
                               onChange={(e) => setEditValues((v) => ({ ...v, name: e.target.value }))} 
                             />
                           ) : (
-                            <strong style={{ color: "var(--hotel-burgundy)" }}>{item.name}</strong>
+                            <strong style={{ color: "#7f1d1d" }}>{item.name}</strong>
                           )}
                         </td>
                         <td className="text-right">
@@ -353,8 +353,8 @@ function AdminDashboard({ user }) {
                               onChange={(e) => setEditValues((v) => ({ ...v, price: e.target.value }))} 
                             />
                           ) : (
-                            <span style={{ fontWeight: "600", color: "var(--hotel-gold)" }}>
-                              ${item.price}
+                            <span style={{ fontWeight: "600", color: "#fbbf24" }}>
+                              ₹{item.price}
                             </span>
                           )}
                         </td>
@@ -369,7 +369,7 @@ function AdminDashboard({ user }) {
                           ) : (
                             <span style={{ 
                               fontWeight: "600", 
-                              color: item.quantityAvailable < 10 ? "var(--danger-color)" : "var(--hotel-burgundy)" 
+                              color: item.quantityAvailable < 10 ? "#dc2626" : "#7f1d1d" 
                             }}>
                               {item.quantityAvailable}
                             </span>
@@ -407,7 +407,7 @@ function AdminDashboard({ user }) {
                             onClick={() => handleToggleMenu(item._id)} 
                             disabled={loading}
                             className={`btn btn-sm ${item.isMenuOfTheDay ? 'btn-success' : 'btn-outline'}`}
-                            style={item.isMenuOfTheDay ? { background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" } : {}}
+                            style={item.isMenuOfTheDay ? { background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)" } : {}}
                           >
                             {item.isMenuOfTheDay ? "⭐ Yes" : "No"}
                           </button>
@@ -434,7 +434,7 @@ function AdminDashboard({ user }) {
                               <button 
                                 onClick={() => startEdit(item)} 
                                 className="btn btn-sm btn-primary"
-                                style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
+                                style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #1e40af 100%)" }}
                               >
                                 ✏️ Edit
                               </button>

@@ -159,11 +159,11 @@ function CustomerOrderHistory({ user }) {
             <div className="stat-label">Total Orders</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">${stats.totalSpent.toFixed(0)}</div>
+            <div className="stat-value">₹{stats.totalSpent.toFixed(0)}</div>
             <div className="stat-label">Total Spent</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">${stats.averageOrderValue.toFixed(2)}</div>
+            <div className="stat-value">₹{stats.averageOrderValue.toFixed(2)}</div>
             <div className="stat-label">Average Order</div>
           </div>
           <div className="stat-card">
@@ -337,7 +337,7 @@ function CustomerOrderHistory({ user }) {
                         fontSize: "var(--font-size-sm)", 
                         color: "rgba(255, 255, 255, 0.8)" 
                       }}>
-                        Total: ${order.totalAmount.toFixed(2)}
+                        Total: ₹{order.totalAmount.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -358,7 +358,7 @@ function CustomerOrderHistory({ user }) {
                           <div>
                             <div className="order-item-name">{item.name}</div>
                             <div className="order-item-details">
-                              ${item.price} × {item.quantity} = ${(item.price * item.quantity).toFixed(2)}
+                              ₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(2)}
                             </div>
                           </div>
                         </div>
