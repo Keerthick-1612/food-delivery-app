@@ -29,10 +29,12 @@ function OrderDashboard({ user }) {
   };
 
   const handleMarkAsServed = async (orderId) => {
+    if (!window.confirm("Are you sure you want to mark this order as served?")) {
+      return;
+    }
     try {
       setError("");
       await markOrderAsServed(orderId, user.token);
-      // Remove the served order from the list
       setOrders(prev => prev.filter(order => order._id !== orderId));
     } catch (err) {
       setError(err.response?.data?.message || "Failed to mark order as served");
@@ -53,155 +55,208 @@ function OrderDashboard({ user }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'confirmed': return '#3498DB';
-      case 'preparing': return '#F39C12';
-      case 'ready': return '#27AE60';
-      case 'delivered': return '#2ECC71';
-      case 'cancelled': return '#E74C3C';
-      default: return '#95A5A6';
+      case 'confirmed': return 'var(--info-color)';
+      case 'preparing': return 'var(--warning-color)';
+      case 'ready': return 'var(--success-color)';
+      case 'delivered': return 'var(--success-color)';
+      case 'cancelled': return 'var(--danger-color)';
+      default: return 'var(--gray-500)';
     }
   };
 
-  return (
-    <div style={{ maxWidth: "1200px", margin: "40px auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2>Order Dashboard</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <a 
-            href="/admin" 
-            style={{ 
-              padding: "8px 16px", 
-              backgroundColor: "#27AE60", 
-              color: "white", 
-              textDecoration: "none", 
-              borderRadius: "4px",
-              fontSize: "14px"
-            }}
-          >
-            Back to Menu
-          </a>
-          <a 
-            href="/admin/orders/history" 
-            style={{ 
-              padding: "8px 16px", 
-              backgroundColor: "#8E44AD", 
-              color: "white", 
-              textDecoration: "none", 
-              borderRadius: "4px",
-              fontSize: "14px"
-            }}
-          >
-            View History
-          </a>
-          <button 
-            onClick={loadOrders}
-            disabled={loading}
-            style={{ 
-              padding: "8px 16px", 
-              backgroundColor: "#3498DB", 
-              color: "white", 
-              border: "none", 
-              borderRadius: "4px",
-              cursor: "pointer"
-            }}
-          >
-            {loading ? "Loading..." : "Refresh"}
-          </button>
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'confirmed': return '✅';
+      case 'preparing': return '👨‍🍳';
+      case 'ready': return '🍽️';
+      case 'delivered': return '🚚';
+      case 'cancelled': return '❌';
+      default: return '⏳';
+    }
+  };
+
+  const stats = {
+    totalOrders: orders.length,
+    confirmedOrders: orders.filter(order => order.status === 'confirmed').length,
+    preparingOrders: orders.filter(order => order.status === 'preparing').length,
+    totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0)
+  };
+
+  if (loading && orders.length === 0) {
+    return (
+      <div className="container">
+        <div className="page-container">
+          <div className="empty-state">
+            <div className="loading-spinner" style={{ width: "40px", height: "40px", margin: "0 auto var(--spacing-4)" }}></div>
+            <div className="empty-state-title">Loading Orders...</div>
+            <div className="empty-state-description">Please wait while we fetch the latest orders</div>
+          </div>
         </div>
       </div>
-      
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      
-      {orders.length === 0 ? (
-        <p>No orders found.</p>
-      ) : (
-        <div style={{ display: "grid", gap: "20px" }}>
-          {orders.map((order) => (
-            <div 
-              key={order._id} 
-              style={{ 
-                border: "1px solid #4A5F7A", 
-                borderRadius: "8px", 
-                padding: "20px",
-                backgroundColor: "#34495E"
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <div>
-                  <h3 style={{ margin: 0, color: "white" }}>Order #{order._id.slice(-6)}</h3>
-                  <p style={{ margin: "4px 0", color: "#BDC3C7" }}>
-                    Customer: {order.user.name} ({order.user.email})
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div 
-                    style={{ 
-                      padding: "6px 12px", 
-                      backgroundColor: getStatusColor(order.status), 
-                      color: "white", 
-                      borderRadius: "4px",
-                      fontSize: "14px",
-                      fontWeight: "bold",
-                      textTransform: "uppercase"
-                    }}
-                  >
-                    {order.status}
-                  </div>
-                  <p style={{ margin: "4px 0", fontSize: "12px", color: "#BDC3C7" }}>
-                    {formatDate(order.createdAt)}
-                  </p>
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: "16px" }}>
-                <h4 style={{ margin: "0 0 8px 0", color: "white" }}>Items:</h4>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ backgroundColor: "#2C3E50" }}>
-                      <th style={{ textAlign: "left", padding: "8px", borderBottom: "1px solid #4A5F7A", color: "white" }}>Item</th>
-                      <th style={{ textAlign: "right", padding: "8px", borderBottom: "1px solid #4A5F7A", color: "white" }}>Price</th>
-                      <th style={{ textAlign: "center", padding: "8px", borderBottom: "1px solid #4A5F7A", color: "white" }}>Qty</th>
-                      <th style={{ textAlign: "right", padding: "8px", borderBottom: "1px solid #4A5F7A", color: "white" }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items.map((item, index) => (
-                      <tr key={index}>
-                        <td style={{ padding: "8px", borderBottom: "1px solid #4A5F7A", color: "white" }}>{item.name}</td>
-                        <td style={{ padding: "8px", textAlign: "right", borderBottom: "1px solid #4A5F7A", color: "white" }}>${item.price}</td>
-                        <td style={{ padding: "8px", textAlign: "center", borderBottom: "1px solid #4A5F7A", color: "white" }}>{item.quantity}</td>
-                        <td style={{ padding: "8px", textAlign: "right", borderBottom: "1px solid #4A5F7A", color: "white" }}>${(item.price * item.quantity).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "2px solid #3498DB", paddingTop: "12px" }}>
-                <strong style={{ fontSize: "18px", color: "white" }}>
-                  Total: ${order.totalAmount.toFixed(2)}
-                </strong>
-                {order.status === "confirmed" && (
-                  <button
-                    onClick={() => handleMarkAsServed(order._id)}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor: "#27AE60",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "14px"
-                    }}
-                  >
-                    Mark as Served
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+    );
+  }
+
+  return (
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">📋 Order Management</h1>
+        <p className="page-subtitle">Monitor and manage all incoming orders at Grand Palace Hotel</p>
+      </div>
+
+      <div style={{ maxWidth: "1400px", width: "100%" }}>
+        {/* Stats Cards */}
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <div className="stat-value">{stats.totalOrders}</div>
+            <div className="stat-label">Active Orders</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{stats.confirmedOrders}</div>
+            <div className="stat-label">Confirmed Orders</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{stats.preparingOrders}</div>
+            <div className="stat-label">Preparing Orders</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">${stats.totalRevenue.toFixed(0)}</div>
+            <div className="stat-label">Total Revenue</div>
+          </div>
         </div>
-      )}
+
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center mb-8">
+          <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Active Orders</h2>
+          <div className="flex gap-4">
+            <a 
+              href="/admin" 
+              className="btn btn-primary"
+              style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
+            >
+              ⚙️ Hotel Management
+            </a>
+            <a 
+              href="/admin/orders/history" 
+              className="btn btn-outline"
+            >
+              📊 Order History
+            </a>
+            <button 
+              onClick={loadOrders}
+              disabled={loading}
+              className="btn btn-secondary"
+              style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
+            >
+              {loading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Loading...
+                </>
+              ) : (
+                "🔄 Refresh"
+              )}
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="form-error" style={{ 
+            background: "var(--danger-color)", 
+            color: "white", 
+            padding: "var(--spacing-4)", 
+            borderRadius: "var(--radius-lg)",
+            marginBottom: "var(--spacing-6)",
+            textAlign: "center"
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Orders List */}
+        {orders.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">📋</div>
+            <div className="empty-state-title">No Active Orders</div>
+            <div className="empty-state-description">
+              All orders have been processed. New orders will appear here when guests place them.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: "var(--spacing-6)" }}>
+            {orders.map((order) => (
+              <div key={order._id} className="order-card animate-fade-in">
+                <div className="order-header">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="order-id">Order #{order._id.slice(-6)}</h3>
+                      <p className="order-customer">
+                        👤 {order.user.name} ({order.user.email})
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div 
+                        className="order-status"
+                        style={{ 
+                          backgroundColor: getStatusColor(order.status),
+                          color: "white"
+                        }}
+                      >
+                        {getStatusIcon(order.status)} {order.status.toUpperCase()}
+                      </div>
+                      <p style={{ 
+                        margin: "var(--spacing-2) 0 0 0", 
+                        fontSize: "var(--font-size-sm)", 
+                        color: "rgba(255, 255, 255, 0.8)" 
+                      }}>
+                        {formatDate(order.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="order-body">
+                  <div className="order-items">
+                    <h4 style={{ 
+                      margin: "0 0 var(--spacing-4) 0", 
+                      color: "var(--text-primary)",
+                      fontSize: "var(--font-size-lg)"
+                    }}>
+                      📦 Order Items
+                    </h4>
+                    <div style={{ display: "grid", gap: "var(--spacing-3)" }}>
+                      {order.items.map((item, index) => (
+                        <div key={index} className="order-item">
+                          <div>
+                            <div className="order-item-name">{item.name}</div>
+                            <div className="order-item-details">
+                              ${item.price} × {item.quantity} = ${(item.price * item.quantity).toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="order-footer">
+                  <div className="order-total">
+                    Total: ${order.totalAmount.toFixed(2)}
+                  </div>
+                  {order.status === "confirmed" && (
+                    <button
+                      onClick={() => handleMarkAsServed(order._id)}
+                      className="btn btn-success"
+                      style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
+                    >
+                      ✅ Mark as Served
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

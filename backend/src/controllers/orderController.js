@@ -209,3 +209,21 @@ export const markOrderAsServed = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getCustomerOrderHistory = async (req, res) => {
+  const userId = req.user._id;
+  
+  try {
+    const orders = await Order.find({ 
+      user: userId, 
+      status: { $nin: ["pending"] } 
+    })
+      .populate('user', 'name email')
+      .populate('items.foodItem', 'name price')
+      .sort({ createdAt: -1 });
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

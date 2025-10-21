@@ -7,8 +7,10 @@ const connectDB = async () => {
   if (cachedConnection) return cachedConnection;
   if (connectingPromise) return connectingPromise;
 
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://localhost:27017/food-delivery";
+  
   connectingPromise = mongoose
-    .connect(process.env.MONGO_URI)
+    .connect(mongoUri)
     .then((conn) => {
       cachedConnection = conn;
       console.log(`MongoDB Connected: ${conn.connection.host}`);

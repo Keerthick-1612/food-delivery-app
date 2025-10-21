@@ -10,20 +10,31 @@ function CustomerMenu({ user }) {
   const [cart, setCart] = useState({ items: [], totalAmount: 0 });
   const [quantities, setQuantities] = useState({});
   const [showCart, setShowCart] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
-    getFoodItems(user.token)
-      .then(({ data }) => setItems(data))
-      .catch((err) => setError(err.response?.data?.message || "Failed to load menu"));
-    
-    getCart(user.token)
-      .then(({ data }) => setCart(data))
-      .catch(() => {});
+    loadData();
   }, [user, navigate]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [itemsResponse, cartResponse] = await Promise.all([
+        getFoodItems(user.token),
+        getCart(user.token)
+      ]);
+      setItems(itemsResponse.data);
+      setCart(cartResponse.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleQuantityChange = (itemId, quantity) => {
     setQuantities(prev => ({ ...prev, [itemId]: quantity }));
@@ -53,10 +64,8 @@ function CustomerMenu({ user }) {
     
     const currentCartQuantity = getCurrentCartQuantity(itemId);
     if (quantity >= currentCartQuantity) {
-      // Remove item completely if subtracting all or more
       await handleUpdateCartItem(itemId, 0);
     } else {
-      // Subtract the specified amount
       await handleUpdateCartItem(itemId, currentCartQuantity - quantity);
     }
     setQuantities(prev => ({ ...prev, [itemId]: 0 }));
@@ -88,10 +97,7 @@ function CustomerMenu({ user }) {
       await confirmOrder(user.token);
       setCart({ items: [], totalAmount: 0 });
       setShowCart(false);
-      // Refresh menu to show updated quantities
-      getFoodItems(user.token)
-        .then(({ data }) => setItems(data))
-        .catch(() => {});
+      await loadData();
       alert("Order confirmed successfully!");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to confirm order");
@@ -101,257 +107,413 @@ function CustomerMenu({ user }) {
   const menuOfTheDay = items.filter(item => item.isMenuOfTheDay && item.quantityAvailable > 0);
   const regularItems = items.filter(item => !item.isMenuOfTheDay && item.quantityAvailable > 0);
 
-  return (
-    <div style={{ maxWidth: "800px", margin: "40px auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2>Menu</h2>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <span>Cart: {cart.items.length} items (${cart.totalAmount.toFixed(2)})</span>
-          <button 
-            onClick={() => setShowCart(!showCart)}
-            style={{ padding: "8px 16px", backgroundColor: "#2C3E50", color: "white", border: "none", borderRadius: "4px" }}
-          >
-            {showCart ? "Hide Cart" : "View Cart"}
-          </button>
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="page-container">
+          <div className="empty-state">
+            <div className="loading-spinner" style={{ width: "40px", height: "40px", margin: "0 auto var(--spacing-4)" }}></div>
+            <div className="empty-state-title">Loading Menu...</div>
+            <div className="empty-state-description">Please wait while we fetch the latest menu items</div>
+          </div>
         </div>
       </div>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      
-      {menuOfTheDay.length > 0 && (
-        <div style={{ marginBottom: "32px" }}>
-          <h3 style={{ color: "#2C3E50", borderBottom: "2px solid #34495E", paddingBottom: "8px" }}>
-            🌟 Menu of the Day
-          </h3>
-          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px", backgroundColor: "#34495E", borderRadius: "8px", overflow: "hidden" }}>
-            <thead>
-              <tr style={{ backgroundColor: "#2C3E50" }}>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #4A5F7A", padding: "12px", color: "white" }}>Name</th>
-                <th style={{ textAlign: "right", borderBottom: "1px solid #4A5F7A", padding: "12px", color: "white" }}>Price</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #4A5F7A", padding: "12px", color: "white" }}>Description</th>
-                <th style={{ textAlign: "center", borderBottom: "1px solid #4A5F7A", padding: "12px", color: "white" }}>Quantity</th>
-                <th style={{ textAlign: "center", borderBottom: "1px solid #4A5F7A", padding: "12px", color: "white" }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {menuOfTheDay.map((it) => (
-                <tr key={it._id} style={{ backgroundColor: "#34495E" }}>
-                  <td style={{ padding: "12px", fontWeight: "bold", color: "white" }}>{it.name}</td>
-                  <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", color: "#E8F4FD" }}>${it.price}</td>
-                  <td style={{ padding: "12px", color: "#BDC3C7" }}>{(it.description && it.description.trim()) ? it.description : "-"}</td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                      <div style={{ fontSize: "12px", color: "#BDC3C7" }}>
-                        In Cart: {getCurrentCartQuantity(it._id)}
-                      </div>
-                      <input
-                        type="number"
-                        min="1"
-                        max={getAvailableQuantity(it._id, it.quantityAvailable)}
-                        value={quantities[it._id] || ""}
-                        onChange={(e) => handleQuantityChange(it._id, parseInt(e.target.value) || 0)}
-                        style={{ width: "60px", padding: "4px", textAlign: "center" }}
-                        placeholder="Qty"
-                      />
-                    </div>
-                  </td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                      <button
-                        onClick={() => handleAddToCart(it._id, quantities[it._id] || 1)}
-                        disabled={!quantities[it._id] || quantities[it._id] <= 0 || getAvailableQuantity(it._id, it.quantityAvailable) <= 0}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: getCurrentCartQuantity(it._id) > 0 ? "#3498DB" : "#27AE60",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        {getCurrentCartQuantity(it._id) > 0 ? "Add More" : "Add"}
-                      </button>
-                      {getCurrentCartQuantity(it._id) > 0 && (
-                        <button
-                          onClick={() => handleSubtractFromCart(it._id, quantities[it._id] || 1)}
-                          disabled={!quantities[it._id] || quantities[it._id] <= 0}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#e74c3c",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          Subtract
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    );
+  }
+
+  return (
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">🍽️ Grand Palace Menu</h1>
+        <p className="page-subtitle">Experience our exquisite culinary offerings crafted by world-class chefs</p>
+      </div>
+
+      <div style={{ maxWidth: "1400px", width: "100%" }}>
+        {error && (
+          <div className="form-error" style={{ 
+            background: "var(--danger-color)", 
+            color: "white", 
+            padding: "var(--spacing-4)", 
+            borderRadius: "var(--radius-lg)",
+            marginBottom: "var(--spacing-6)",
+            textAlign: "center"
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Enhanced Cart Summary */}
+        <div className="cart-summary" style={{ 
+          background: "linear-gradient(135deg, var(--bg-card) 0%, var(--hotel-cream) 100%)",
+          border: "2px solid var(--hotel-gold)",
+          boxShadow: "var(--shadow-xl)"
+        }}>
+          <div className="cart-header">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="cart-title" style={{ color: "var(--hotel-burgundy)" }}>🛒 Your Order</h2>
+                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)", marginTop: "var(--spacing-1)" }}>
+                  Ready to place your order?
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="cart-total" style={{ fontSize: "var(--font-size-2xl)", fontWeight: "700" }}>
+                  ${cart.totalAmount.toFixed(2)}
+                </div>
+                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
+                  {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex gap-4 items-center">
+              <button 
+                onClick={() => setShowCart(!showCart)}
+                className="btn btn-outline"
+                style={{ 
+                  borderColor: "var(--hotel-burgundy)", 
+                  color: "var(--hotel-burgundy)",
+                  fontWeight: "600"
+                }}
+              >
+                {showCart ? "📋 Hide Details" : "📋 View Details"}
+              </button>
+            </div>
+            
+            {cart.items.length > 0 && (
+              <div className="flex gap-3 items-center">
+                <div style={{ 
+                  fontSize: "var(--font-size-sm)", 
+                  color: "var(--text-secondary)",
+                  textAlign: "right"
+                }}>
+                  <div>Ready to order?</div>
+                  <div style={{ fontWeight: "600", color: "var(--hotel-burgundy)" }}>
+                    Click to place order
+                  </div>
+                </div>
+                <button
+                  onClick={handleConfirmOrder}
+                  className="btn btn-success btn-lg"
+                  style={{ 
+                    background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)",
+                    fontSize: "var(--font-size-lg)",
+                    fontWeight: "700",
+                    padding: "var(--spacing-4) var(--spacing-8)",
+                    boxShadow: "var(--shadow-lg)"
+                  }}
+                >
+                  🚀 Place Order
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      )}
 
-      {regularItems.length > 0 && (
-        <div>
-          <h3>All Items</h3>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Item ID</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Name</th>
-                <th style={{ textAlign: "right", borderBottom: "1px solid #ddd" }}>Price</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Category</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Description</th>
-                <th style={{ textAlign: "center", borderBottom: "1px solid #ddd" }}>Quantity</th>
-                <th style={{ textAlign: "center", borderBottom: "1px solid #ddd" }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {regularItems.map((it) => (
-                <tr key={it._id}>
-                  <td style={{ padding: 6 }}>{it.itemId}</td>
-                  <td style={{ padding: 6 }}>{it.name}</td>
-                  <td style={{ padding: 6, textAlign: "right" }}>{it.price}</td>
-                  <td style={{ padding: 6 }}>{it.category || "-"}</td>
-                  <td style={{ padding: 6 }}>{(it.description && it.description.trim()) ? it.description : "-"}</td>
-                  <td style={{ padding: 6, textAlign: "center" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                      <div style={{ fontSize: "12px", color: "#666" }}>
-                        In Cart: {getCurrentCartQuantity(it._id)}
-                      </div>
-                      <input
-                        type="number"
-                        min="1"
-                        max={getAvailableQuantity(it._id, it.quantityAvailable)}
-                        value={quantities[it._id] || ""}
-                        onChange={(e) => handleQuantityChange(it._id, parseInt(e.target.value) || 0)}
-                        style={{ width: "60px", padding: "4px", textAlign: "center" }}
-                        placeholder="Qty"
-                      />
-                    </div>
-                  </td>
-                  <td style={{ padding: 6, textAlign: "center" }}>
-                    <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                      <button
-                        onClick={() => handleAddToCart(it._id, quantities[it._id] || 1)}
-                        disabled={!quantities[it._id] || quantities[it._id] <= 0 || getAvailableQuantity(it._id, it.quantityAvailable) <= 0}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: getCurrentCartQuantity(it._id) > 0 ? "#3498DB" : "#27AE60",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        {getCurrentCartQuantity(it._id) > 0 ? "Add More" : "Add"}
-                      </button>
-                      {getCurrentCartQuantity(it._id) > 0 && (
-                        <button
-                          onClick={() => handleSubtractFromCart(it._id, quantities[it._id] || 1)}
-                          disabled={!quantities[it._id] || quantities[it._id] <= 0}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#e74c3c",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          Subtract
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {items.length === 0 && (
-        <p>No items available.</p>
-      )}
-
-      {showCart && (
-        <div style={{ marginTop: "32px", padding: "20px", border: "1px solid #ddd", borderRadius: "8px" }}>
-          <h3>Shopping Cart</h3>
-          {cart.items.length === 0 ? (
-            <p>Your cart is empty</p>
-          ) : (
-            <div>
-              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+        {/* Menu Table View */}
+        <div className="card">
+          <div className="card-header">
+            <h3 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-xl)" }}>🍽️ Complete Menu</h3>
+          </div>
+          <div className="card-body">
+            <div style={{ overflowX: "auto" }}>
+              <table className="table">
                 <thead>
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <th style={{ textAlign: "left", padding: "8px", borderBottom: "1px solid #ddd" }}>Item</th>
-                    <th style={{ textAlign: "right", padding: "8px", borderBottom: "1px solid #ddd" }}>Price</th>
-                    <th style={{ textAlign: "center", padding: "8px", borderBottom: "1px solid #ddd" }}>Quantity</th>
-                    <th style={{ textAlign: "right", padding: "8px", borderBottom: "1px solid #ddd" }}>Total</th>
-                    <th style={{ textAlign: "center", padding: "8px", borderBottom: "1px solid #ddd" }}>Action</th>
+                  <tr>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th className="text-right">Price</th>
+                    <th className="text-center">Available</th>
+                    <th className="text-center">In Cart</th>
+                    <th className="text-center">Quantity</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cart.items.map((item) => (
-                    <tr key={item.foodItem._id}>
-                      <td style={{ padding: "8px" }}>{item.name}</td>
-                      <td style={{ padding: "8px", textAlign: "right" }}>${item.price}</td>
-                      <td style={{ padding: "8px", textAlign: "center" }}>
+                  {/* Menu of the Day Items */}
+                  {menuOfTheDay.map((item) => (
+                    <tr key={item._id} style={{ backgroundColor: "var(--hotel-cream)" }}>
+                      <td>
+                        <div>
+                          <strong style={{ color: "var(--hotel-burgundy)" }}>{item.name}</strong>
+                          <div style={{ fontSize: "var(--font-size-xs)", color: "var(--hotel-gold)", fontWeight: "600" }}>
+                            ⭐ Chef's Special
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
+                          {item.description || "Delicious food item"}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
+                          ${item.price}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span style={{ 
+                          fontWeight: "600", 
+                          color: item.quantityAvailable < 10 ? "var(--danger-color)" : "var(--success-color)" 
+                        }}>
+                          {item.quantityAvailable}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span style={{ fontWeight: "600", color: "var(--primary-color)" }}>
+                          {getCurrentCartQuantity(item._id)}
+                        </span>
+                      </td>
+                      <td className="text-center">
                         <input
                           type="number"
                           min="1"
-                          max={item.foodItem.quantityAvailable}
-                          value={item.quantity}
-                          onChange={(e) => handleUpdateCartItem(item.foodItem._id, parseInt(e.target.value) || 0)}
-                          style={{ width: "60px", padding: "4px", textAlign: "center" }}
+                          max={getAvailableQuantity(item._id, item.quantityAvailable)}
+                          value={quantities[item._id] || ""}
+                          onChange={(e) => handleQuantityChange(item._id, parseInt(e.target.value) || 0)}
+                          className="quantity-input"
+                          placeholder="Qty"
+                          disabled={getAvailableQuantity(item._id, item.quantityAvailable) <= 0}
+                          style={{ width: "80px" }}
                         />
                       </td>
-                      <td style={{ padding: "8px", textAlign: "right" }}>${(item.price * item.quantity).toFixed(2)}</td>
-                      <td style={{ padding: "8px", textAlign: "center" }}>
-                        <button
-                          onClick={() => handleUpdateCartItem(item.foodItem._id, 0)}
-                          style={{
-                            padding: "4px 8px",
-                            backgroundColor: "#e74c3c",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          Remove
-                        </button>
+                      <td className="text-center">
+                        <div style={{ display: "flex", gap: "var(--spacing-2)", justifyContent: "center" }}>
+                          <button
+                            onClick={() => handleAddToCart(item._id, quantities[item._id] || 1)}
+                            disabled={!quantities[item._id] || quantities[item._id] <= 0 || getAvailableQuantity(item._id, item.quantityAvailable) <= 0}
+                            className={`btn btn-sm ${getCurrentCartQuantity(item._id) > 0 ? 'btn-secondary' : 'btn-success'}`}
+                          >
+                            {getCurrentCartQuantity(item._id) > 0 ? "Add More" : "Add"}
+                          </button>
+                          
+                          {getCurrentCartQuantity(item._id) > 0 && (
+                            <button
+                              onClick={() => handleSubtractFromCart(item._id, quantities[item._id] || 1)}
+                              disabled={!quantities[item._id] || quantities[item._id] <= 0}
+                              className="btn btn-sm btn-danger"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {/* Regular Menu Items */}
+                  {regularItems.map((item) => (
+                    <tr key={item._id}>
+                      <td>
+                        <strong style={{ color: "var(--hotel-burgundy)" }}>{item.name}</strong>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
+                          {item.description || "Delicious food item"}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
+                          ${item.price}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span style={{ 
+                          fontWeight: "600", 
+                          color: item.quantityAvailable < 10 ? "var(--danger-color)" : "var(--success-color)" 
+                        }}>
+                          {item.quantityAvailable}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span style={{ fontWeight: "600", color: "var(--primary-color)" }}>
+                          {getCurrentCartQuantity(item._id)}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <input
+                          type="number"
+                          min="1"
+                          max={getAvailableQuantity(item._id, item.quantityAvailable)}
+                          value={quantities[item._id] || ""}
+                          onChange={(e) => handleQuantityChange(item._id, parseInt(e.target.value) || 0)}
+                          className="quantity-input"
+                          placeholder="Qty"
+                          disabled={getAvailableQuantity(item._id, item.quantityAvailable) <= 0}
+                          style={{ width: "80px" }}
+                        />
+                      </td>
+                      <td className="text-center">
+                        <div style={{ display: "flex", gap: "var(--spacing-2)", justifyContent: "center" }}>
+                          <button
+                            onClick={() => handleAddToCart(item._id, quantities[item._id] || 1)}
+                            disabled={!quantities[item._id] || quantities[item._id] <= 0 || getAvailableQuantity(item._id, item.quantityAvailable) <= 0}
+                            className={`btn btn-sm ${getCurrentCartQuantity(item._id) > 0 ? 'btn-secondary' : 'btn-success'}`}
+                          >
+                            {getCurrentCartQuantity(item._id) > 0 ? "Add More" : "Add"}
+                          </button>
+                          
+                          {getCurrentCartQuantity(item._id) > 0 && (
+                            <button
+                              onClick={() => handleSubtractFromCart(item._id, quantities[item._id] || 1)}
+                              disabled={!quantities[item._id] || quantities[item._id] <= 0}
+                              className="btn btn-sm btn-danger"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div style={{ textAlign: "right", marginBottom: "16px" }}>
-                <strong>Total: ${cart.totalAmount.toFixed(2)}</strong>
-              </div>
-              <button
-                onClick={handleConfirmOrder}
-                style={{
-                  padding: "12px 24px",
-                  backgroundColor: "#27AE60",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "16px"
-                }}
-              >
-                Confirm Order
-              </button>
             </div>
-          )}
+          </div>
         </div>
-      )}
+
+        {/* Empty State */}
+        {items.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon">🍽️</div>
+            <div className="empty-state-title">Menu Coming Soon</div>
+            <div className="empty-state-description">
+              Our chefs are preparing an extraordinary culinary experience. Please check back soon for our exquisite menu offerings.
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Cart Details Modal */}
+        {showCart && cart.items.length > 0 && (
+          <div className="cart-summary" style={{ 
+            marginTop: "var(--spacing-8)",
+            background: "linear-gradient(135deg, var(--bg-card) 0%, var(--hotel-cream) 100%)",
+            border: "2px solid var(--hotel-gold)",
+            boxShadow: "var(--shadow-xl)"
+          }}>
+            <div className="cart-header">
+              <div className="flex justify-between items-center">
+                <h3 className="cart-title" style={{ color: "var(--hotel-burgundy)" }}>📋 Order Summary</h3>
+                <div style={{ 
+                  fontSize: "var(--font-size-sm)", 
+                  color: "var(--text-secondary)",
+                  textAlign: "right"
+                }}>
+                  <div>Review your order before placing</div>
+                  <div style={{ fontWeight: "600", color: "var(--hotel-burgundy)" }}>
+                    Total: ${cart.totalAmount.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ marginBottom: "var(--spacing-6)" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table className="table" style={{ boxShadow: "var(--shadow-md)" }}>
+                  <thead>
+                    <tr style={{ background: "var(--hotel-burgundy)", color: "white" }}>
+                      <th style={{ color: "white" }}>Item</th>
+                      <th className="text-right" style={{ color: "white" }}>Price</th>
+                      <th className="text-center" style={{ color: "white" }}>Quantity</th>
+                      <th className="text-right" style={{ color: "white" }}>Total</th>
+                      <th className="text-center" style={{ color: "white" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cart.items.map((item) => (
+                      <tr key={item.foodItem._id}>
+                        <td>
+                          <div>
+                            <div style={{ fontWeight: "600", color: "var(--hotel-burgundy)", fontSize: "var(--font-size-lg)" }}>
+                              {item.name}
+                            </div>
+                            <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
+                              Available: {item.foodItem.quantityAvailable} units
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-right">
+                          <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
+                            ${item.price}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <input
+                            type="number"
+                            min="1"
+                            max={item.foodItem.quantityAvailable}
+                            value={item.quantity}
+                            onChange={(e) => handleUpdateCartItem(item.foodItem._id, parseInt(e.target.value) || 0)}
+                            className="quantity-input"
+                            style={{ width: "80px", textAlign: "center" }}
+                          />
+                        </td>
+                        <td className="text-right">
+                          <span style={{ fontWeight: "700", color: "var(--hotel-burgundy)", fontSize: "var(--font-size-lg)" }}>
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={() => handleUpdateCartItem(item.foodItem._id, 0)}
+                            className="btn btn-sm btn-danger"
+                            style={{ fontWeight: "600" }}
+                          >
+                            🗑️ Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center" style={{ 
+              padding: "var(--spacing-6)", 
+              background: "var(--bg-secondary)", 
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--border-light)"
+            }}>
+              <div>
+                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
+                  Order Summary
+                </div>
+                <div style={{ fontSize: "var(--font-size-xl)", fontWeight: "700", color: "var(--hotel-burgundy)" }}>
+                  Total: ${cart.totalAmount.toFixed(2)}
+                </div>
+                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)", marginTop: "var(--spacing-1)" }}>
+                  {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCart(false)}
+                  className="btn btn-outline"
+                  style={{ fontWeight: "600" }}
+                >
+                  📋 Close Details
+                </button>
+                <button
+                  onClick={handleConfirmOrder}
+                  className="btn btn-success btn-lg"
+                  style={{ 
+                    background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)",
+                    fontSize: "var(--font-size-lg)",
+                    fontWeight: "700",
+                    padding: "var(--spacing-4) var(--spacing-8)",
+                    boxShadow: "var(--shadow-lg)"
+                  }}
+                >
+                  🚀 Place Order
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

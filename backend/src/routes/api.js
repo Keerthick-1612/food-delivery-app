@@ -6,7 +6,7 @@ import {
 } from "../controllers/userController.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import { createFoodItem, listFoodItems, updateFoodItem, deleteFoodItem, toggleMenuOfTheDay } from "../controllers/foodController.js";
-import { addToCart, getCart, updateCartItem, confirmOrder, getAllOrders, getOrderHistory, markOrderAsServed } from "../controllers/orderController.js";
+import { addToCart, getCart, updateCartItem, confirmOrder, getAllOrders, getOrderHistory, markOrderAsServed, getCustomerOrderHistory } from "../controllers/orderController.js";
 
 const router = express.Router();
 
@@ -36,5 +36,8 @@ router.post("/cart/confirm", protect, confirmOrder);
 router.get("/orders", protect, authorizeRoles("admin"), getAllOrders);
 router.get("/orders/history", protect, authorizeRoles("admin"), getOrderHistory);
 router.patch("/orders/:orderId/serve", protect, authorizeRoles("admin"), markOrderAsServed);
+
+// Customer: Order History
+router.get("/orders/customer-history", protect, getCustomerOrderHistory);
 
 export default router;

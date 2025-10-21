@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getOrderHistory } from "../api/cartApi";
+import { getCustomerOrderHistory } from "../api/cartApi";
 
-function OrderHistory({ user }) {
+function CustomerOrderHistory({ user }) {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -15,17 +15,17 @@ function OrderHistory({ user }) {
   });
 
   useEffect(() => {
-    if (!user || user.role !== "admin") {
+    if (!user || user.role !== "customer") {
       navigate("/login");
       return;
     }
-    loadHistory();
+    loadOrderHistory();
   }, [user, navigate]);
 
-  const loadHistory = async () => {
+  const loadOrderHistory = async () => {
     try {
       setLoading(true);
-      const { data } = await getOrderHistory(user.token);
+      const { data } = await getCustomerOrderHistory(user.token);
       setOrders(data);
       setFilteredOrders(data);
     } catch (err) {
@@ -99,14 +99,35 @@ function OrderHistory({ user }) {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      minute: '2-digit'
     });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'confirmed': return 'var(--info-color)';
+      case 'preparing': return 'var(--warning-color)';
+      case 'ready': return 'var(--success-color)';
+      case 'delivered': return 'var(--success-color)';
+      case 'cancelled': return 'var(--danger-color)';
+      default: return 'var(--gray-500)';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'confirmed': return '✅';
+      case 'preparing': return '👨‍🍳';
+      case 'ready': return '🍽️';
+      case 'delivered': return '🚚';
+      case 'cancelled': return '❌';
+      default: return '⏳';
+    }
   };
 
   const stats = {
     totalOrders: filteredOrders.length,
-    totalRevenue: filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+    totalSpent: filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0),
     averageOrderValue: filteredOrders.length > 0 ? filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0) / filteredOrders.length : 0,
     totalItems: filteredOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)
   };
@@ -116,8 +137,8 @@ function OrderHistory({ user }) {
       <div className="page-container">
         <div className="empty-state">
           <div className="loading-spinner" style={{ width: "40px", height: "40px", margin: "0 auto var(--spacing-4)" }}></div>
-          <div className="empty-state-title">Loading Order History...</div>
-          <div className="empty-state-description">Please wait while we fetch the completed orders</div>
+          <div className="empty-state-title">Loading Your Orders...</div>
+          <div className="empty-state-description">Please wait while we fetch your order history</div>
         </div>
       </div>
     );
@@ -126,8 +147,8 @@ function OrderHistory({ user }) {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="page-title">📊 Order History</h1>
-        <p className="page-subtitle">View all completed orders and historical data for Grand Palace Hotel</p>
+        <h1 className="page-title">📋 My Order History</h1>
+        <p className="page-subtitle">Track all your orders and dining history at Grand Palace Hotel</p>
       </div>
 
       <div style={{ maxWidth: "1400px", width: "100%" }}>
@@ -135,42 +156,35 @@ function OrderHistory({ user }) {
         <div className="dashboard-stats">
           <div className="stat-card">
             <div className="stat-value">{stats.totalOrders}</div>
-            <div className="stat-label">Completed Orders</div>
+            <div className="stat-label">Total Orders</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">${stats.totalRevenue.toFixed(0)}</div>
-            <div className="stat-label">Total Revenue</div>
+            <div className="stat-value">${stats.totalSpent.toFixed(0)}</div>
+            <div className="stat-label">Total Spent</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">${stats.averageOrderValue.toFixed(2)}</div>
-            <div className="stat-label">Average Order Value</div>
+            <div className="stat-label">Average Order</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">{stats.totalItems}</div>
-            <div className="stat-label">Items Sold</div>
+            <div className="stat-label">Items Ordered</div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center mb-8">
-          <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Completed Orders</h2>
+          <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Your Orders</h2>
           <div className="flex gap-4">
             <a 
-              href="/admin/orders" 
+              href="/menu" 
               className="btn btn-primary"
               style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
             >
-              📋 Active Orders
-            </a>
-            <a 
-              href="/admin" 
-              className="btn btn-secondary"
-              style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
-            >
-              ⚙️ Hotel Management
+              🍽️ Order Again
             </a>
             <button 
-              onClick={loadHistory}
+              onClick={loadOrderHistory}
               disabled={loading}
               className="btn btn-outline"
             >
@@ -276,14 +290,25 @@ function OrderHistory({ user }) {
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📊</div>
+            <div className="empty-state-icon">📋</div>
             <div className="empty-state-title">No Orders Found</div>
             <div className="empty-state-description">
               {orders.length === 0 
-                ? "No orders have been completed yet. Completed orders will appear here for historical tracking."
+                ? "You haven't placed any orders yet. Start by exploring our delicious menu!"
                 : "No orders match the current filter criteria. Try adjusting your date range or clearing the filter."
               }
             </div>
+            {orders.length === 0 && (
+              <div style={{ marginTop: "var(--spacing-6)" }}>
+                <a 
+                  href="/menu" 
+                  className="btn btn-primary btn-lg"
+                  style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
+                >
+                  🍽️ Browse Menu
+                </a>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ display: "grid", gap: "var(--spacing-6)" }}>
@@ -294,25 +319,25 @@ function OrderHistory({ user }) {
                     <div>
                       <h3 className="order-id">Order #{order._id.slice(-6)}</h3>
                       <p className="order-customer">
-                        👤 {order.user.name} ({order.user.email})
+                        📅 {formatDate(order.createdAt)}
                       </p>
                     </div>
                     <div className="text-right">
                       <div 
                         className="order-status"
                         style={{ 
-                          backgroundColor: "var(--success-color)",
+                          backgroundColor: getStatusColor(order.status),
                           color: "white"
                         }}
                       >
-                        ✅ DELIVERED
+                        {getStatusIcon(order.status)} {order.status.toUpperCase()}
                       </div>
                       <p style={{ 
                         margin: "var(--spacing-2) 0 0 0", 
                         fontSize: "var(--font-size-sm)", 
                         color: "rgba(255, 255, 255, 0.8)" 
                       }}>
-                        {formatDate(order.createdAt)}
+                        Total: ${order.totalAmount.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -351,7 +376,7 @@ function OrderHistory({ user }) {
                     color: "var(--text-secondary)",
                     textAlign: "right"
                   }}>
-                    Completed Order
+                    Order #{order._id.slice(-6)}
                   </div>
                 </div>
               </div>
@@ -363,5 +388,4 @@ function OrderHistory({ user }) {
   );
 }
 
-export default OrderHistory;
-
+export default CustomerOrderHistory;

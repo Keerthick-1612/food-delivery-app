@@ -6,7 +6,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import OrderDashboard from "./pages/OrderDashboard";
 import OrderHistory from "./pages/OrderHistory";
 import CustomerMenu from "./pages/CustomerMenu";
+import CustomerOrderHistory from "./pages/CustomerOrderHistory";
 import Profile from "./components/Profile";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -16,37 +19,49 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={<LoginPage setUser={setUser} />}
-        />
-        <Route
-          path="/register"
-          element={<RegisterPage setUser={setUser} />}
-        />
-        <Route
-          path="/profile"
-          element={user ? <Profile user={user} /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/menu"
-          element={user ? <CustomerMenu user={user} /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/admin"
-          element={user && user.role === "admin" ? <AdminDashboard user={user} /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/admin/orders"
-          element={user && user.role === "admin" ? <OrderDashboard user={user} /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/admin/orders/history"
-          element={user && user.role === "admin" ? <OrderHistory user={user} /> : <Navigate to="/login" />}
-        />
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+      <div className="app-container">
+        <Header user={user} />
+        <main className="main-content">
+          <div className="content-wrapper">
+            <Routes>
+              <Route
+                path="/login"
+                element={<LoginPage setUser={setUser} />}
+              />
+              <Route
+                path="/register"
+                element={<RegisterPage setUser={setUser} />}
+              />
+              <Route
+                path="/profile"
+                element={user ? <Profile user={user} /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/menu"
+                element={user ? <CustomerMenu user={user} /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/orders"
+                element={user && user.role === "customer" ? <CustomerOrderHistory user={user} /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/admin"
+                element={user && user.role === "admin" ? <AdminDashboard user={user} /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/admin/orders"
+                element={user && user.role === "admin" ? <OrderDashboard user={user} /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/admin/orders/history"
+                element={user && user.role === "admin" ? <OrderHistory user={user} /> : <Navigate to="/login" />}
+              />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </Routes>
+          </div>
+        </main>
+        <Footer />
+      </div>
     </Router>
   );
 }

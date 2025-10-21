@@ -36,3 +36,8 @@ export const markOrderAsServed = (orderId, token) =>
   axios.patch(`${API_BASE}/users/orders/${orderId}/serve`, {}, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+export const getCustomerOrderHistory = (token) =>
+  axios.get(`${API_BASE}/users/orders/customer-history`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });

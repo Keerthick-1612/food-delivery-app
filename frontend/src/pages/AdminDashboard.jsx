@@ -20,11 +20,20 @@ function AdminDashboard({ user }) {
       navigate("/login");
       return;
     }
-    const token = user.token;
-    getFoodItems(token)
-      .then(({ data }) => setItems(data))
-      .catch(() => {});
+    loadItems();
   }, [user, navigate]);
+
+  const loadItems = async () => {
+    try {
+      setLoading(true);
+      const { data } = await getFoodItems(user.token);
+      setItems(data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load items");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -93,6 +102,9 @@ function AdminDashboard({ user }) {
   };
 
   const removeItem = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) {
+      return;
+    }
     try {
       setLoading(true);
       await deleteFoodItem(id, user.token);
@@ -110,21 +122,15 @@ function AdminDashboard({ user }) {
       setLoading(true);
       const { data } = await toggleMenuOfTheDay(id, user.token);
       
-      // Update the specific item
       setItems((prev) => prev.map((it) => (it._id === id ? data : it)));
       
-      // If setting as menu of the day, deselect all other items
       if (data.isMenuOfTheDay) {
         setItems((prev) => prev.map((it) => 
           it._id !== id ? { ...it, isMenuOfTheDay: false } : it
         ));
       }
       
-      // Show success message
-      if (data.message) {
-        setError(""); // Clear any previous errors
-        // You could add a success message state here if needed
-      }
+      setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to toggle menu status");
     } finally {
@@ -132,126 +138,323 @@ function AdminDashboard({ user }) {
     }
   };
 
+  const stats = {
+    totalItems: items.length,
+    menuOfTheDay: items.filter(item => item.isMenuOfTheDay).length,
+    lowStock: items.filter(item => item.quantityAvailable < 10).length,
+    totalValue: items.reduce((sum, item) => sum + (item.price * item.quantityAvailable), 0)
+  };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "40px auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2>Admin Dashboard - Menu Management</h2>
-        <a 
-          href="/admin/orders" 
-          style={{ 
-            padding: "8px 16px", 
-            backgroundColor: "#E67E22", 
-            color: "white", 
-            textDecoration: "none", 
-            borderRadius: "4px",
-            fontSize: "14px"
-          }}
-        >
-          View Orders
-        </a>
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">⚙️ Hotel Management</h1>
+        <p className="page-subtitle">Manage Grand Palace Hotel's culinary operations and menu offerings</p>
       </div>
-      <h3>Add Food Item</h3>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleCreate} style={{ display: "grid", gap: 8 }}>
-        <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input placeholder="Price" type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required />
-        <input placeholder="Quantity Available" type="number" value={quantityAvailable} onChange={(e) => setQuantityAvailable(e.target.value)} required />
-        <input placeholder="Category (optional)" value={category} onChange={(e) => setCategory(e.target.value)} />
-        <textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <button type="submit" disabled={loading}>{loading ? "Saving..." : "Add Item"}</button>
-      </form>
 
-      <h3 style={{ marginTop: 24 }}>Existing Items</h3>
-      <div>
-        {items.length === 0 ? (
-          <p>No items yet.</p>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Item ID</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Name</th>
-                <th style={{ textAlign: "right", borderBottom: "1px solid #ddd" }}>Price</th>
-                <th style={{ textAlign: "right", borderBottom: "1px solid #ddd" }}>Qty</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Category</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Description</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Menu of Day</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((it) => (
-                <tr key={it._id}>
-                  <td style={{ padding: 6 }}>{it.itemId}</td>
-                  <td style={{ padding: 6 }}>
-                    {editId === it._id ? (
-                      <input value={editValues.name} onChange={(e) => setEditValues((v) => ({ ...v, name: e.target.value }))} />
-                    ) : (
-                      it.name
-                    )}
-                  </td>
-                  <td style={{ padding: 6, textAlign: "right" }}>
-                    {editId === it._id ? (
-                      <input type="number" step="0.01" value={editValues.price} onChange={(e) => setEditValues((v) => ({ ...v, price: e.target.value }))} style={{ textAlign: "right" }} />
-                    ) : (
-                      it.price
-                    )}
-                  </td>
-                  <td style={{ padding: 6, textAlign: "right" }}>
-                    {editId === it._id ? (
-                      <input type="number" value={editValues.quantityAvailable} onChange={(e) => setEditValues((v) => ({ ...v, quantityAvailable: e.target.value }))} style={{ textAlign: "right" }} />
-                    ) : (
-                      it.quantityAvailable
-                    )}
-                  </td>
-                  <td style={{ padding: 6 }}>
-                    {editId === it._id ? (
-                      <input value={editValues.category} onChange={(e) => setEditValues((v) => ({ ...v, category: e.target.value }))} />
-                    ) : (
-                      it.category || "-"
-                    )}
-                  </td>
-                  <td style={{ padding: 6 }}>
-                    {editId === it._id ? (
-                      <input value={editValues.description} onChange={(e) => setEditValues((v) => ({ ...v, description: e.target.value }))} />
-                    ) : (
-                      (it.description && it.description.trim()) ? it.description : "-"
-                    )}
-                  </td>
-                  <td style={{ padding: 6 }}>
-                    <button 
-                      onClick={() => handleToggleMenu(it._id)} 
-                      disabled={loading}
-                      style={{ 
-                        backgroundColor: it.isMenuOfTheDay ? "#4CAF50" : "#f44336",
-                        color: "white",
-                        border: "none",
-                        padding: "4px 8px",
-                        borderRadius: "4px"
-                      }}
-                    >
-                      {it.isMenuOfTheDay ? "Yes" : "No"}
-                    </button>
-                  </td>
-                  <td style={{ padding: 6 }}>
-                    {editId === it._id ? (
-                      <>
-                        <button onClick={() => saveEdit(it._id)} disabled={loading} style={{ marginRight: 6 }}>Save</button>
-                        <button onClick={cancelEdit}>Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => startEdit(it)} style={{ marginRight: 6 }}>Edit</button>
-                        <button onClick={() => removeItem(it._id)}>Delete</button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div style={{ maxWidth: "1400px", width: "100%" }}>
+        {/* Stats Cards */}
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <div className="stat-value">{stats.totalItems}</div>
+            <div className="stat-label">Menu Items</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{stats.menuOfTheDay}</div>
+            <div className="stat-label">Chef's Special</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{stats.lowStock}</div>
+            <div className="stat-label">Low Stock Items</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">${stats.totalValue.toFixed(0)}</div>
+            <div className="stat-label">Inventory Value</div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center mb-8">
+          <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Menu Management</h2>
+          <div className="flex gap-4">
+            <a 
+              href="/admin/orders" 
+              className="btn btn-secondary"
+              style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
+            >
+              📋 Order Management
+            </a>
+            <a 
+              href="/admin/orders/history" 
+              className="btn btn-outline"
+            >
+              📊 Order History
+            </a>
+          </div>
+        </div>
+
+        {/* Add Item Form */}
+        <div className="card mb-8">
+          <div className="card-header">
+            <h3 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-xl)" }}>➕ Add New Menu Item</h3>
+          </div>
+          <div className="card-body">
+            {error && (
+              <div className="form-error" style={{ 
+                background: "var(--danger-color)", 
+                color: "white", 
+                padding: "var(--spacing-3)", 
+                borderRadius: "var(--radius-md)",
+                marginBottom: "var(--spacing-4)",
+                textAlign: "center"
+              }}>
+                {error}
+              </div>
+            )}
+            
+            <form onSubmit={handleCreate}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--spacing-4)", marginBottom: "var(--spacing-6)" }}>
+                <div className="form-group">
+                  <label className="form-label">Item Name *</label>
+                  <input 
+                    className="form-input"
+                    placeholder="Enter item name" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    required 
+                    disabled={loading}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Price *</label>
+                  <input 
+                    className="form-input"
+                    placeholder="0.00" 
+                    type="number" 
+                    step="0.01" 
+                    value={price} 
+                    onChange={(e) => setPrice(e.target.value)} 
+                    required 
+                    disabled={loading}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Quantity Available *</label>
+                  <input 
+                    className="form-input"
+                    placeholder="0" 
+                    type="number" 
+                    value={quantityAvailable} 
+                    onChange={(e) => setQuantityAvailable(e.target.value)} 
+                    required 
+                    disabled={loading}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Category</label>
+                  <input 
+                    className="form-input"
+                    placeholder="e.g., Appetizer, Main Course" 
+                    value={category} 
+                    onChange={(e) => setCategory(e.target.value)} 
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea 
+                  className="form-input form-textarea"
+                  placeholder="Describe the food item..." 
+                  value={description} 
+                  onChange={(e) => setDescription(e.target.value)} 
+                  disabled={loading}
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className="btn btn-primary btn-lg"
+                disabled={loading}
+                style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
+              >
+                {loading ? (
+                  <>
+                    <span className="loading-spinner"></span>
+                    Adding Item...
+                  </>
+                ) : (
+                  "➕ Add Menu Item"
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Items Table */}
+        <div className="card">
+          <div className="card-header">
+            <h3 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-xl)" }}>📋 Current Menu Items</h3>
+          </div>
+          <div className="card-body">
+            {items.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">🍽️</div>
+                <div className="empty-state-title">No Menu Items Yet</div>
+                <div className="empty-state-description">
+                  Start by adding your first menu item using the form above to create an exceptional dining experience.
+                </div>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th className="text-right">Price</th>
+                      <th className="text-right">Stock</th>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th className="text-center">Chef's Special</th>
+                      <th className="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item._id}>
+                        <td>
+                          <span className="badge badge-secondary">
+                            {item.itemId}
+                          </span>
+                        </td>
+                        <td>
+                          {editId === item._id ? (
+                            <input 
+                              className="form-input" 
+                              value={editValues.name} 
+                              onChange={(e) => setEditValues((v) => ({ ...v, name: e.target.value }))} 
+                            />
+                          ) : (
+                            <strong style={{ color: "var(--hotel-burgundy)" }}>{item.name}</strong>
+                          )}
+                        </td>
+                        <td className="text-right">
+                          {editId === item._id ? (
+                            <input 
+                              className="form-input" 
+                              type="number" 
+                              step="0.01" 
+                              value={editValues.price} 
+                              onChange={(e) => setEditValues((v) => ({ ...v, price: e.target.value }))} 
+                            />
+                          ) : (
+                            <span style={{ fontWeight: "600", color: "var(--hotel-gold)" }}>
+                              ${item.price}
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-right">
+                          {editId === item._id ? (
+                            <input 
+                              className="form-input" 
+                              type="number" 
+                              value={editValues.quantityAvailable} 
+                              onChange={(e) => setEditValues((v) => ({ ...v, quantityAvailable: e.target.value }))} 
+                            />
+                          ) : (
+                            <span style={{ 
+                              fontWeight: "600", 
+                              color: item.quantityAvailable < 10 ? "var(--danger-color)" : "var(--hotel-burgundy)" 
+                            }}>
+                              {item.quantityAvailable}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {editId === item._id ? (
+                            <input 
+                              className="form-input" 
+                              value={editValues.category} 
+                              onChange={(e) => setEditValues((v) => ({ ...v, category: e.target.value }))} 
+                            />
+                          ) : (
+                            item.category || "-"
+                          )}
+                        </td>
+                        <td>
+                          {editId === item._id ? (
+                            <input 
+                              className="form-input" 
+                              value={editValues.description} 
+                              onChange={(e) => setEditValues((v) => ({ ...v, description: e.target.value }))} 
+                            />
+                          ) : (
+                            <span style={{ 
+                              fontSize: "var(--font-size-sm)", 
+                              color: "var(--text-secondary)" 
+                            }}>
+                              {(item.description && item.description.trim()) ? item.description : "-"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-center">
+                          <button 
+                            onClick={() => handleToggleMenu(item._id)} 
+                            disabled={loading}
+                            className={`btn btn-sm ${item.isMenuOfTheDay ? 'btn-success' : 'btn-outline'}`}
+                            style={item.isMenuOfTheDay ? { background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" } : {}}
+                          >
+                            {item.isMenuOfTheDay ? "⭐ Yes" : "No"}
+                          </button>
+                        </td>
+                        <td className="text-center">
+                          {editId === item._id ? (
+                            <div className="flex gap-2 justify-center">
+                              <button 
+                                onClick={() => saveEdit(item._id)} 
+                                disabled={loading} 
+                                className="btn btn-sm btn-success"
+                              >
+                                ✓ Save
+                              </button>
+                              <button 
+                                onClick={cancelEdit} 
+                                className="btn btn-sm btn-outline"
+                              >
+                                ✗ Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2 justify-center">
+                              <button 
+                                onClick={() => startEdit(item)} 
+                                className="btn btn-sm btn-primary"
+                                style={{ background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)" }}
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button 
+                                onClick={() => removeItem(item._id)} 
+                                className="btn btn-sm btn-danger"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
