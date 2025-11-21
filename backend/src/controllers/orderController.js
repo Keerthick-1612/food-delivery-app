@@ -1,6 +1,6 @@
 import Order from "../models/Order.js";
 import FoodItem from "../models/FoodItem.js";
-import { sendOrderConfirmationEmail } from "../services/emailService.js";
+import { getOrderNotifier } from "../services/notifiers/OrderNotifier.js";
 
 export const addToCart = async (req, res) => {
   const { itemId, quantity } = req.body;
@@ -161,18 +161,19 @@ export const confirmOrder = async (req, res) => {
     order.status = "confirmed";
     await order.save();
     
-    // Send order confirmation email to customer
+    // Notify all observers about order confirmation (Observer Pattern)
     // Get user email and name from req.user (available from auth middleware)
     const userEmail = req.user.email;
     const userName = req.user.name;
     
-    // Send email notification (non-blocking - don't fail order if email fails)
-    try {
-      await sendOrderConfirmationEmail(order, userEmail, userName);
-    } catch (emailError) {
-      console.error("Failed to send order confirmation email:", emailError.message);
-      // Don't fail the order confirmation if email fails
-    }
+    // Use OrderNotifier to notify all registered observers (non-blocking)
+    const notifier = getOrderNotifier();
+    await notifier.notifyObservers({
+      order,
+      userEmail,
+      userName,
+      eventType: "order_confirmed"
+    });
     
     res.json({ message: "Order confirmed successfully", order });
   } catch (error) {

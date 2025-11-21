@@ -4,9 +4,13 @@ import connectDB from "./src/config/db.js";
 import userRoutes from "./src/routes/api.js";
 import { requestLogger, rateLimit } from "./src/middleware/decorators.js";
 import cors from "cors";
+import { initializeNotifiers } from "./src/services/notifiers/initializeNotifiers.js";
 
 dotenv.config();
 connectDB();
+
+// Initialize notification observers (Observer Pattern)
+initializeNotifiers();
 
 const app = express();
 
