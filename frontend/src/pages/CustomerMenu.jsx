@@ -226,6 +226,7 @@ function CustomerMenu({ user }) {
                     <th>Item</th>
                     <th>Description</th>
                     <th className="text-right">Price</th>
+                    <th className="text-center">Cooking Time</th>
                     <th className="text-center">Available</th>
                     <th className="text-center">In Cart</th>
                     <th className="text-center">Quantity</th>
@@ -252,6 +253,18 @@ function CustomerMenu({ user }) {
                       <td className="text-right">
                         <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
                           ₹{item.price}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span style={{ 
+                          fontWeight: "600", 
+                          color: "var(--hotel-burgundy)",
+                          background: "var(--hotel-gold)",
+                          padding: "var(--spacing-1) var(--spacing-2)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: "var(--font-size-sm)"
+                        }}>
+                          {item.cookingTime || 5} min
                         </span>
                       </td>
                       <td className="text-center">
@@ -318,6 +331,18 @@ function CustomerMenu({ user }) {
                       <td className="text-right">
                         <span style={{ fontWeight: "600", color: "var(--hotel-gold)", fontSize: "var(--font-size-lg)" }}>
                           ₹{item.price}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span style={{ 
+                          fontWeight: "600", 
+                          color: "var(--hotel-burgundy)",
+                          background: "var(--hotel-gold)",
+                          padding: "var(--spacing-1) var(--spacing-2)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: "var(--font-size-sm)"
+                        }}>
+                          {item.cookingTime || 5} min
                         </span>
                       </td>
                       <td className="text-center">

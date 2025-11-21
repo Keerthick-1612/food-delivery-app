@@ -9,11 +9,12 @@ function AdminDashboard({ user }) {
   const [quantityAvailable, setQuantityAvailable] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [cookingTime, setCookingTime] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [editId, setEditId] = useState(null);
-  const [editValues, setEditValues] = useState({ name: "", price: "", quantityAvailable: "", category: "", description: "" });
+  const [editValues, setEditValues] = useState({ name: "", price: "", quantityAvailable: "", category: "", description: "", cookingTime: "" });
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -38,7 +39,7 @@ function AdminDashboard({ user }) {
   const handleCreate = async (e) => {
     e.preventDefault();
     setError("");
-    if (!name || !price || !quantityAvailable) {
+    if (!name || !price || !quantityAvailable || !cookingTime) {
       setError("All required fields must be filled");
       return;
     }
@@ -48,6 +49,7 @@ function AdminDashboard({ user }) {
       quantityAvailable: Number(quantityAvailable),
       description,
       category,
+      cookingTime: Number(cookingTime),
     };
     try {
       setLoading(true);
@@ -58,6 +60,7 @@ function AdminDashboard({ user }) {
       setQuantityAvailable("");
       setDescription("");
       setCategory("");
+      setCookingTime("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create item");
     } finally {
@@ -73,12 +76,13 @@ function AdminDashboard({ user }) {
       quantityAvailable: String(item.quantityAvailable ?? ""),
       category: item.category || "",
       description: item.description || "",
+      cookingTime: String(item.cookingTime ?? ""),
     });
   };
 
   const cancelEdit = () => {
     setEditId(null);
-    setEditValues({ name: "", price: "", quantityAvailable: "", category: "", description: "" });
+    setEditValues({ name: "", price: "", quantityAvailable: "", category: "", description: "", cookingTime: "" });
   };
 
   const saveEdit = async (id) => {
@@ -90,6 +94,7 @@ function AdminDashboard({ user }) {
         quantityAvailable: Number(editValues.quantityAvailable),
         category: editValues.category,
         description: editValues.description,
+        cookingTime: Number(editValues.cookingTime),
       };
       const { data } = await updateFoodItem(id, payload, user.token);
       setItems((prev) => prev.map((it) => (it._id === id ? data : it)));
@@ -263,6 +268,20 @@ function AdminDashboard({ user }) {
                     disabled={loading}
                   />
                 </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Cooking Time (minutes) *</label>
+                  <input 
+                    className="form-input"
+                    placeholder="e.g., 15" 
+                    type="number" 
+                    min="1"
+                    value={cookingTime} 
+                    onChange={(e) => setCookingTime(e.target.value)} 
+                    required 
+                    disabled={loading}
+                  />
+                </div>
               </div>
               
               <div className="form-group">
@@ -319,6 +338,7 @@ function AdminDashboard({ user }) {
                       <th className="text-right">Price</th>
                       <th className="text-right">Stock</th>
                       <th>Category</th>
+                      <th className="text-center">Cooking Time</th>
                       <th>Description</th>
                       <th className="text-center">Chef's Special</th>
                       <th className="text-center">Actions</th>
@@ -384,6 +404,28 @@ function AdminDashboard({ user }) {
                             />
                           ) : (
                             item.category || "-"
+                          )}
+                        </td>
+                        <td className="text-center">
+                          {editId === item._id ? (
+                            <input 
+                              className="form-input" 
+                              type="number"
+                              min="1"
+                              value={editValues.cookingTime} 
+                              onChange={(e) => setEditValues((v) => ({ ...v, cookingTime: e.target.value }))} 
+                            />
+                          ) : (
+                            <span style={{ 
+                              fontWeight: "600", 
+                              color: "var(--hotel-burgundy)",
+                              background: "var(--hotel-gold)",
+                              padding: "var(--spacing-1) var(--spacing-2)",
+                              borderRadius: "var(--radius-sm)",
+                              fontSize: "var(--font-size-sm)"
+                            }}>
+                              {item.cookingTime || 5} min
+                            </span>
                           )}
                         </td>
                         <td>

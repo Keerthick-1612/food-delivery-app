@@ -14,17 +14,23 @@ function OrderDashboard({ user }) {
       return;
     }
     loadOrders();
+    
+    // Auto-refresh orders every 10 seconds (without loading spinner)
+    const interval = setInterval(() => loadOrders(false), 10000);
+    
+    return () => clearInterval(interval);
   }, [user, navigate]);
 
-  const loadOrders = async () => {
+  const loadOrders = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const { data } = await getAllOrders(user.token);
       setOrders(data);
+      setError(""); // Clear any previous errors
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load orders");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -73,6 +79,42 @@ function OrderDashboard({ user }) {
       case 'cancelled': return '❌';
       default: return '⏳';
     }
+  };
+
+  // Function to check if an order should be marked as priority
+  const isPriorityOrder = (order, index, orders) => {
+    if (index === 0) return false; // First order is never priority
+    
+    const previousOrder = orders[index - 1];
+    const timeDiffMinutes = (new Date(order.createdAt) - new Date(previousOrder.createdAt)) / (1000 * 60);
+    
+    // Check if users are different
+    const currentUserId = order.user._id || order.user;
+    const previousUserId = previousOrder.user._id || previousOrder.user;
+    const usersAreDifferent = currentUserId.toString() !== previousUserId.toString();
+    
+    // Calculate cooking time difference
+    const currentCookingTime = calculateTotalCookingTime(order);
+    const previousCookingTime = calculateTotalCookingTime(previousOrder);
+    const cookingTimeDiff = previousCookingTime - currentCookingTime;
+    
+    return timeDiffMinutes < 3 && usersAreDifferent && cookingTimeDiff > 15;
+  };
+
+  // Function to calculate total cooking time for an order
+  const calculateTotalCookingTime = (order) => {
+    // Get unique food items and their cooking times
+    const uniqueItems = new Map();
+    order.items.forEach(item => {
+      if (item.foodItem) {
+        // Use cookingTime if available, otherwise default to 5 minutes
+        const cookingTime = item.foodItem.cookingTime || 5;
+        uniqueItems.set(item.foodItem._id, cookingTime);
+      }
+    });
+    
+    // Sum up cooking times (once per unique food item, not per quantity)
+    return Array.from(uniqueItems.values()).reduce((total, time) => total + time, 0);
   };
 
   const stats = {
@@ -126,7 +168,12 @@ function OrderDashboard({ user }) {
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center mb-8">
-          <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Active Orders</h2>
+          <div>
+            <h2 style={{ margin: 0, color: "var(--hotel-burgundy)", fontSize: "var(--font-size-2xl)" }}>Order Queue</h2>
+            <p style={{ margin: "var(--spacing-2) 0 0 0", color: "var(--text-secondary)", fontSize: "var(--font-size-sm)" }}>
+              Orders are displayed in queue order. Orders can move ahead by ONE position if placed within 3 minutes of the previous order by a different customer, and the cooking time difference is more than 15 minutes.
+            </p>
+          </div>
           <div className="flex gap-4">
             <a 
               href="/admin" 
@@ -142,7 +189,7 @@ function OrderDashboard({ user }) {
               📊 Order History
             </a>
             <button 
-              onClick={loadOrders}
+              onClick={() => loadOrders(true)}
               disabled={loading}
               className="btn btn-secondary"
               style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
@@ -183,12 +230,44 @@ function OrderDashboard({ user }) {
           </div>
         ) : (
           <div style={{ display: "grid", gap: "var(--spacing-6)" }}>
-            {orders.map((order) => (
+            {orders.map((order, index) => (
               <div key={order._id} className="order-card animate-fade-in">
                 <div className="order-header">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="order-id">Order #{order._id.slice(-6)}</h3>
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="queue-position"
+                          style={{
+                            background: "linear-gradient(135deg, var(--hotel-burgundy) 0%, var(--primary-color) 100%)",
+                            color: "white",
+                            padding: "var(--spacing-2) var(--spacing-3)",
+                            borderRadius: "var(--radius-md)",
+                            fontSize: "var(--font-size-sm)",
+                            fontWeight: "600",
+                            minWidth: "60px",
+                            textAlign: "center"
+                          }}
+                        >
+                          #{index + 1} in Queue
+                        </div>
+                        {isPriorityOrder(order, index, orders) && (
+                          <div 
+                            className="priority-badge"
+                            style={{
+                              background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)",
+                              color: "white",
+                              padding: "var(--spacing-1) var(--spacing-2)",
+                              borderRadius: "var(--radius-sm)",
+                              fontSize: "var(--font-size-xs)",
+                              fontWeight: "600"
+                            }}
+                          >
+                            ⚡ Priority
+                          </div>
+                        )}
+                        <h3 className="order-id">Order #{order._id.slice(-6)}</h3>
+                      </div>
                       <p className="order-customer">
                         👤 {order.user.name} ({order.user.email})
                       </p>
@@ -239,18 +318,37 @@ function OrderDashboard({ user }) {
                 </div>
                 
                 <div className="order-footer">
-                  <div className="order-total">
-                    Total: ₹{order.totalAmount.toFixed(2)}
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="order-total">
+                        Total: ₹{order.totalAmount.toFixed(2)}
+                      </div>
+                      <div style={{ 
+                        fontSize: "var(--font-size-sm)", 
+                        color: "var(--text-secondary)",
+                        marginTop: "var(--spacing-1)"
+                      }}>
+                        📦 {order.items.reduce((sum, item) => sum + item.quantity, 0)} items total
+                      </div>
+                      <div style={{ 
+                        fontSize: "var(--font-size-sm)", 
+                        color: "var(--hotel-burgundy)",
+                        marginTop: "var(--spacing-1)",
+                        fontWeight: "600"
+                      }}>
+                        ⏱️ {calculateTotalCookingTime(order)} min cooking time
+                      </div>
+                    </div>
+                    {order.status === "confirmed" && (
+                      <button
+                        onClick={() => handleMarkAsServed(order._id)}
+                        className="btn btn-success"
+                        style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
+                      >
+                        ✅ Mark as Served
+                      </button>
+                    )}
                   </div>
-                  {order.status === "confirmed" && (
-                    <button
-                      onClick={() => handleMarkAsServed(order._id)}
-                      className="btn btn-success"
-                      style={{ background: "linear-gradient(135deg, var(--hotel-gold) 0%, var(--accent-color) 100%)" }}
-                    >
-                      ✅ Mark as Served
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
